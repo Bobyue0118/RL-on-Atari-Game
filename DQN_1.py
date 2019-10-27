@@ -28,7 +28,7 @@ class DQN:
         
         self.batch_size = 32
         self.train_start = 1000
-        self.state_size = self.env.observation_space.shape[0]
+        self.state_size = self.env.observation_space.shape[0]*4
         self.action_size = self.env.action_space.n
         self.learning_rate = 0.005
         
@@ -98,6 +98,16 @@ class DQN:
         self.target_model.set_weights(self.evaluation_model.get_weights())
         return
     
+    def binary_encoding(self,decimal_state):
+        binary_state = [np.binary_repr(x,width=8) for x in decimal_state[0]]
+        parameter_list = []
+        for parameter in binary_state:
+            parameter_list.append(int(parameter[:2],2))
+            parameter_list.append(int(parameter[2:4],2))
+            parameter_list.append(int(parameter[4:6],2))
+            parameter_list.append(int(parameter[6:],2))
+        return np.array(parameter_list)
+
 
     
     def visualize(self, reward, episode):
@@ -131,6 +141,8 @@ def main():
     current_step = 0
     for episode in range(episodes):
         prev_state = env.reset().reshape(1,128)
+        prev_state = dqn_agent.binary_encoding(prev_state).reshape(1,512)
+        # print(prev_state)
         
         reward_in_episode = 0
         print('episode:',episode)
@@ -139,6 +151,7 @@ def main():
             action = dqn_agent.choose_action(prev_state,current_step)
             current_state, reward, done, _ = env.step(action)  #  [1,128]
             current_state = current_state.reshape(1, 128)
+            current_state = dqn_agent.binary_encoding(current_state).reshape(1,512)
             
             current_step += 1
             reward_in_episode += reward
