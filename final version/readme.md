@@ -10,7 +10,7 @@ python supervised_DQN.py  --name supervised_DQN
 
 
 ## reward_DQN
- a new network structure is used, and a brand-new reward systerm is prroposed
+ a new network structure is used, and a brand-new reward systerm is proposed
   the agent can get about 10 rewards after 2.5K training, which spends about 6 hours.
   
   ```
