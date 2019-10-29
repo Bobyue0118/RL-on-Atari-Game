@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 from path import Path
+import csv
 import copy
 
 
@@ -19,7 +20,6 @@ from keras.layers import Activation, Flatten, Conv1D, MaxPooling1D,Reshape
 import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-from queue import Queue
 
 parser = argparse.ArgumentParser(description='DQN for pixel game',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -37,10 +37,10 @@ class DQN:
         """
         self.env = env
         self.memory = deque(maxlen=400000) # 双向队列
-        self.gamma = 0.9
+        self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilon_min = 0.005
-        self.epsilon_decay =  self.epsilon / 1000000 # 
+        self.epsilon_decay =  (self.epsilon-self.epsilon_min)/1000000 # 
         
         self.batch_size = 32
         self.train_start = 20000
@@ -125,6 +125,18 @@ class DQN:
             parameter_list.append(int(parameter[6:],2))
         return np.array(parameter_list)
 
+    def train_with_gt(self):       
+        csv_file=open('labeled_dataset.csv')
+        csv_reader_lines = csv.reader(csv_file)
+        for line in csv_reader_lines:
+            line = list(map(int, line))
+            update_input = np.array(line[:-4]).reshape(1,128)
+            update_target = np.array(line[-4:]).reshape(1,4)
+            self.evaluation_model.fit(update_input, update_target, batch_size=1, epochs=1, verbose=0)
+            
+
+
+    
     def visualize(self, reward, episode):
         plt.plot(episode, reward, 'ob-')
         plt.title('Average reward each 100 episode')
@@ -150,13 +162,13 @@ def main():
     episodes = 5000
     trial_len = 10000
     
-    tmp_reward=0
-    sum_rewards = 0
     
     graph_reward = []
     graph_episodes = []
     
     dqn_agent = DQN(env=env)
+    for _ in range(3):
+        dqn_agent.train_with_gt()
 
     ####### Training ######
     ### START CODE HERE ###
@@ -166,75 +178,66 @@ def main():
         prev_state = env.reset().reshape(1,128)
         # prev_state = dqn_agent.binary_encoding(prev_state).reshape(1,512)
         # print(prev_state)
-        prev_state_, action_,reward_,current_state_,done_ = [],[],[],[],[]
+        
         reward_in_episode = 0
         update_count = 0
         prev_lives = {"ale.lives":5}
         lives = {}
-
+        current_state = 0
+        reward_100episodes = 0
+        env.step(1)
         print('episode:',episode)
-        for i in tqdm(range(trial_len)):
+        for _ in tqdm(range(trial_len)):
             # env.render()
             action = dqn_agent.choose_action(prev_state,current_step)
             
-            #action = input()
-            #action = np.int64(action)
+            del current_state, lives
             current_state, reward, done, lives = env.step(action)  #  [1,128]
-            if (prev_lives['ale.lives']>lives['ale.lives']):
-                prev_lives = copy.deepcopy(lives)
-                action = np.int64(1)
-                current_state, reward, done, lives = env.step(action)
-            # print(_)
+
             current_state = current_state.reshape(1, 128)
             # current_state = dqn_agent.binary_encoding(current_state).reshape(1,512)
             
             current_step += 1
-            update_count += 1
             reward_in_episode += reward
-            # print("******************",reward)
-            if i < 33:
-                prev_state_.append(copy.deepcopy(prev_state))
-                action_.append(action)
-                reward_.append(reward)
-                current_state_.append(copy.deepcopy(current_state))
-                done_.append(done)
-            else:
-                prev_state_.append(copy.deepcopy(prev_state))
-                action_.append(action)
-                reward_.append(reward)
-                current_state_.append(copy.deepcopy(current_state))
-                done_.append(done)
+            reward_100episodes += reward
+            update_count += 1
 
-                reward = np.sum(reward_[30:35])
+            dqn_agent.remember(copy.deepcopy(prev_state), action, reward, copy.deepcopy(current_state), done)
 
-                dqn_agent.remember(copy.deepcopy(prev_state_[0]), action_[0], reward,copy.deepcopy( current_state_[0]), done_[0])
-                prev_state_.remove(prev_state_[0])
-                action_.remove(action_[0])
-                reward_.remove(reward_[0])
-                current_state_.remove(current_state_[0])
-                done_.remove(done_[0])
+            if (prev_lives['ale.lives']>lives['ale.lives']):
+                del prev_lives
+                prev_lives = copy.deepcopy(lives)
+                action = np.int64(1)
+                current_state, reward, done, lives = env.step(action)
+                current_state = current_state.reshape(1, 128)
 
-            dqn_agent.replay()
+            if current_step % 4==0:
+                dqn_agent.replay()
+
+            del prev_state
             
-
             prev_state = copy.deepcopy(current_state)
-            
+
             
             if done:
                 if(update_count>=300) or current_step%2500==0:
                     dqn_agent.target_train()
                 # env.render()
+                
+
+
+                if episode % 100 == 99:
+                    reward_100episodes
+                    reward_100episodes = 0
                 break
-
-
+        # visualization
         if episode%500 ==0:           
             dqn_agent.target_model.save(save_path + '/my_model.h5')
 
-        # visualization
         training_writer.add_scalar('Reward', reward_in_episode, episode)
+        training_writer.add_scalar('Reward for 100episodes', reward_100episodes, episode)
         graph_reward.append(reward_in_episode)
         graph_episodes.append(episode)
-        del prev_state_, action_,reward_,current_state_,done_
 
 
     ### END CODE HERE ###
