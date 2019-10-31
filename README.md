@@ -6,6 +6,6 @@
 - Chi Zhang & Bo Yue, Automation SEIEE, SJTU
 ## Final_Final Version
 - This is really the most updated version: [atariDQN.py](https://github.com/Bobyue0118/RL-on-Atari-Game/edit/master/README.md)  
-'''
+```
 python3 atariDQN.py
-'''
+```
