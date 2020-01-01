@@ -3,9 +3,9 @@
 ## Purpose
 - implement a DQN agent to play atari game breakout
 ## Participant
-- Chi Zhang & Bo Yue, Automation SEIEE, SJTU
-## Final_Final Version
-- This is really the most updated version: [atariDQN.py](https://github.com/Bobyue0118/RL-on-Atari-Game/edit/master/README.md)  
+- Bo Yue & Chi Zhang, Automation SEIEE, SJTU
+## Final Version
+- The most updated version: [atariDQN.py](https://github.com/Bobyue0118/RL-on-Atari-Game/edit/master/README.md)  , to implement:
 ```
 python3 atariDQN.py
 ```
