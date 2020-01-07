@@ -1,11 +1,11 @@
-# RL-on-Atari-Game
+## RL-on-Atari-Game
 - A part of homework3 for AU332, Automation SEIEE, SJTU
-## Purpose
+### Purpose
 - implement a DQN agent to play atari game breakout
-## Participant
+### Participant
 - Bo Yue & Chi Zhang, Automation SEIEE, SJTU
-## Final Version
-- The most updated version: [atariDQN.py](https://github.com/Bobyue0118/RL-on-Atari-Game/edit/master/README.md)  , to implement:
+### Final Version
+- Run by:
 ```
 python3 atariDQN.py
 ```
